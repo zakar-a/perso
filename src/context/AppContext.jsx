@@ -51,14 +51,19 @@ export const AppProvider = ({ children }) => {
         if (sErr || uErr || svErr || tErr) {
           throw new Error("Erreur de connexion à la base de données");
         }
+        if (sData) setSalons(sData);
         if (uData) setUsers(uData.map(u => ({ ...u, assignedSalons: u.assigned_salons || [] })));
         if (svData) setServices(svData);
         if (tData) setTransactions(tData.map(t => ({
           ...t, coiffeurId: t.coiffeur_id, coiffeurName: t.coiffeur_name,
           salonId: t.salon_id, serviceId: t.service_id, serviceName: t.service_name, paymentMethod: t.payment_method
         })));
-      } catch (err) { console.error("Fetch error:", err); }
-      finally { setLoading(false); }
+        setLoading(false);
+      } catch (err) { 
+        console.error("Fetch error:", err); 
+        setError("Erreur de chargement des données");
+        setLoading(false);
+      }
     };
     fetchData();
   }, []);
