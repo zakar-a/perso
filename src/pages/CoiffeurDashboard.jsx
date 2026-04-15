@@ -21,14 +21,13 @@ const CoiffeurDashboard = () => {
     setTimeout(() => setShowSuccess(false), 2000);
   };
 
-  const getIcon = (id) => {
-    switch(id) {
-      case 'barbe': return <UserCheck size={32} />;
-      case 'adulte': return <Scissors size={32} />;
-      case 'enfant': return <Baby size={32} />;
-      case 'produit': return <ShoppingBag size={32} />;
-      default: return <Scissors size={32} />;
-    }
+  const getIcon = (service) => {
+    const name = service.name.toLowerCase();
+    if (name.includes('barbe')) return <UserCheck size={32} />;
+    if (name.includes('adulte')) return <Scissors size={32} />;
+    if (name.includes('enfant')) return <Baby size={32} />;
+    if (name.includes('produit')) return <ShoppingBag size={32} />;
+    return <Scissors size={32} />;
   };
 
   return (
@@ -92,12 +91,12 @@ const CoiffeurDashboard = () => {
             onClick={() => handleAddService(service)}
             style={{ padding: '1.5rem' }}
           >
-            {getIcon(service.id)}
+            {getIcon(service)}
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>{service.name}</div>
               <div style={{ fontSize: '1.4rem', fontWeight: 800, marginTop: '4px' }}>
-                {/* Dynamically show the price for the selected salon */}
-                {service.prices[selectedSalonId] || 0}€
+                {/* Dynamically show the price for the selected salon (handled as string key) */}
+                {(service.prices && service.prices[String(selectedSalonId)]) || 0}€
               </div>
             </div>
           </motion.button>
