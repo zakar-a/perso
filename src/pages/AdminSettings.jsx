@@ -9,8 +9,10 @@ const AdminSettings = () => {
     addUser, updateUser, deleteUser,
     addSalon, updateSalon, deleteSalon, 
     addService, updateService, deleteService,
-    updateServicePrice 
+    updateServicePrice, getStats
   } = useAppContext();
+
+  const statsToday = getStats('day');
   
   const [activeSubTab, setActiveSubTab] = useState('employees');
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
@@ -155,10 +157,21 @@ const AdminSettings = () => {
 
       {activeSubTab === 'employees' && (
         <>
-          <div className="flex-between" style={{ marginBottom: '1.5rem' }}>
-            <h2 style={{ fontSize: '1.2rem' }}>Gestion de l'Équipe</h2>
-            <button className="btn-primary" onClick={() => { setEditingItem(null); setEmployeeFormData({ name: '', username: '', password: '', role: 'coiffeur', assignedSalons: [] }); setShowEmployeeModal(true); }} style={{ padding: '8px 16px', fontSize: '0.9rem' }}>
-              <UserPlus size={18} /> Ajouter
+          <div className="glass-card" style={{ padding: '1.25rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid rgba(226, 176, 83, 0.2)' }}>
+            <div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>Total Équipe (Aujourd'hui)</div>
+              <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-gold)' }}>{statsToday.totalRevenue.toFixed(2)}€</div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '1.8rem', fontWeight: 800 }}>{statsToday.count}</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Prestations</div>
+            </div>
+          </div>
+
+          <div className="flex-between" style={{ marginBottom: '1rem' }}>
+            <h2 style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>Détail par salarié</h2>
+            <button className="btn-primary" onClick={() => { setEditingItem(null); setEmployeeFormData({ name: '', username: '', password: '', role: 'coiffeur', assignedSalons: [] }); setShowEmployeeModal(true); }} style={{ padding: '6px 14px', fontSize: '0.8rem' }}>
+              <Plus size={16} /> Ajouter
             </button>
           </div>
 
@@ -175,8 +188,15 @@ const AdminSettings = () => {
                   </div>
                   <div>
                     <div style={{ fontWeight: 600 }}>{user.name}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                      @{user.username} • {user.role === 'patron' ? 'Patron' : 'Coiffeur'}
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span>@{user.username}</span>
+                      <span>•</span>
+                      <span style={{ 
+                        color: (statsToday.byUser[user.id] || 0) > 0 ? 'var(--accent-cyan)' : 'var(--text-secondary)',
+                        fontWeight: (statsToday.byUser[user.id] || 0) > 0 ? 700 : 400
+                      }}>
+                        CA: {(statsToday.byUser[user.id] || 0).toFixed(2)}€
+                      </span>
                     </div>
                   </div>
                 </div>

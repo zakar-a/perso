@@ -270,7 +270,12 @@ export const AppProvider = ({ children }) => {
       return acc;
     }, {});
 
-    return { totalRevenue, count, byMethod, byService, filtered };
+    const byUser = filtered.reduce((acc, t) => {
+      acc[t.coiffeurId] = (acc[t.coiffeurId] || 0) + t.amount;
+      return acc;
+    }, {});
+
+    return { totalRevenue, count, byMethod, byService, byUser, filtered };
   };
 
   const downloadCSV = (data) => {
