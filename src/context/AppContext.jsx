@@ -201,6 +201,32 @@ export const AppProvider = ({ children }) => {
     return null;
   };
 
+  const cancelTransaction = async (transaction) => {
+    if (!transaction) return null;
+    
+    const cancellation = {
+      coiffeur_id: transaction.coiffeurId,
+      coiffeur_name: transaction.coiffeurName,
+      salon_id: parseInt(transaction.salonId),
+      service_id: transaction.serviceId,
+      service_name: transaction.serviceName,
+      payment_method: transaction.paymentMethod,
+      amount: -transaction.amount
+    };
+
+    const { data, error } = await supabase.from('transactions').insert([cancellation]).select();
+    if (!error && data) {
+      const formatted = {
+        ...data[0], coiffeurId: data[0].coiffeur_id, coiffeurName: data[0].coiffeur_name,
+        salonId: data[0].salon_id, serviceId: data[0].service_id, serviceName: data[0].service_name,
+        paymentMethod: data[0].payment_method
+      };
+      setTransactions(prev => [formatted, ...prev]);
+      return formatted;
+    }
+    return null;
+  };
+
   const getStats = (filter = 'day', salonId = null, customRange = null) => {
     const now = new Date();
     let filtered = transactions;
@@ -286,7 +312,7 @@ export const AppProvider = ({ children }) => {
       login, logout, addUser, updateUser, deleteUser,
       addSalon, updateSalon, deleteSalon,
       addService, updateService, deleteService,
-      updateServicePrice, addTransaction, 
+      updateServicePrice, addTransaction, cancelTransaction,
       getStats, downloadCSV
     }}>
       {children}

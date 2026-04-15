@@ -185,13 +185,17 @@ const PatronDashboard = () => {
             stats.filtered.slice(0, 5).map(t => (
               <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                 <div>
-                  <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>{t.serviceName}</div>
+                  <div style={{ fontWeight: 600, fontSize: '0.95rem', color: t.amount < 0 ? 'var(--accent-rose)' : 'inherit' }}>
+                    {t.amount < 0 ? `- ${t.serviceName}` : t.serviceName}
+                  </div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                     {t.coiffeurName} • {new Date(t.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontWeight: 700 }}>{t.amount.toFixed(2)}€</div>
+                  <div style={{ fontWeight: 700, color: t.amount < 0 ? 'var(--accent-rose)' : 'inherit' }}>
+                    {t.amount < 0 ? '' : '+'}{t.amount.toFixed(2)}€
+                  </div>
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{t.paymentMethod}</div>
                 </div>
               </div>

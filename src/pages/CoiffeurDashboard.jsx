@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { Scissors, User, CreditCard, Banknote, CheckCircle2, ShoppingBag, Baby, UserCheck, MapPin } from 'lucide-react';
+import { Scissors, User, CreditCard, Banknote, CheckCircle2, ShoppingBag, Baby, UserCheck, MapPin, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const CoiffeurDashboard = () => {
-  const { salons, services, addTransaction, getStats, currentUser } = useAppContext();
+  const { salons, services, addTransaction, cancelTransaction, getStats, currentUser } = useAppContext();
   
   // Get only salons this user is assigned to
   const userSalons = salons.filter(s => currentUser.assignedSalons.includes(s.id));
@@ -145,6 +145,50 @@ const CoiffeurDashboard = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Recent Activity */}
+      <div className="glass-card" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
+        <h3 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1rem', textTransform: 'uppercase' }}>Dernières Activités</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {getStats('day').filtered.length === 0 ? (
+            <p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Aucune activité aujourd'hui</p>
+          ) : (
+            getStats('day').filtered.slice(0, 5).map(t => (
+              <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.95rem', color: t.amount < 0 ? 'var(--accent-rose)' : 'inherit' }}>
+                    {t.amount < 0 ? `- ${t.serviceName}` : t.serviceName}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                    {new Date(t.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {t.paymentMethod}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ fontWeight: 700, color: t.amount < 0 ? 'var(--accent-rose)' : 'inherit' }}>
+                    {t.amount < 0 ? '' : '+'}{t.amount.toFixed(2)}€
+                  </div>
+                  {t.amount > 0 && (
+                    <button 
+                      onClick={() => {
+                        if(confirm(`Annuler cette prestation (${t.serviceName}) ?`)) {
+                          cancelTransaction(t);
+                        }
+                      }}
+                      style={{ 
+                        background: 'rgba(251, 113, 133, 0.1)', border: 'none', color: 'var(--accent-rose)', 
+                        width: '32px', height: '32px', borderRadius: '8px', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      }}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
 
       <div className="glass-card" style={{ textAlign: 'center', padding: '1.5rem', opacity: 0.8 }}>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Mazagan Professional Station</p>
