@@ -52,7 +52,13 @@ export const AppProvider = ({ children }) => {
           throw new Error("Erreur de connexion à la base de données");
         }
         if (sData) setSalons(sData);
-        if (uData) setUsers(uData.map(u => ({ ...u, assignedSalons: u.assigned_salons || [] })));
+        if (uData && sData) {
+          const validSalonIds = sData.map(s => s.id);
+          setUsers(uData.map(u => ({ 
+            ...u, 
+            assignedSalons: (u.assigned_salons || []).filter(sid => validSalonIds.includes(sid)) 
+          })));
+        }
         if (svData) setServices(svData);
         if (tData) setTransactions(tData.map(t => ({
           ...t, coiffeurId: t.coiffeur_id, coiffeurName: t.coiffeur_name,
@@ -122,9 +128,16 @@ export const AppProvider = ({ children }) => {
   };
 
   const deleteSalon = async (salonId) => {
-    if (confirm("Supprimer ce salon ?")) {
+    if (confirm("Supprimer ce salon ? (Cela l'enlèvera aussi de l'accès des coiffeurs)")) {
       const { error } = await supabase.from('salons').delete().eq('id', salonId);
-      if (!error) setSalons(prev => prev.filter(s => s.id !== salonId));
+      if (!error) {
+        setSalons(prev => prev.filter(s => s.id !== salonId));
+        // Also cleanup in memory for users
+        setUsers(prev => prev.map(u => ({
+          ...u,
+          assignedSalons: u.assignedSalons.filter(sid => sid !== salonId)
+        })));
+      }
     }
   };
 
