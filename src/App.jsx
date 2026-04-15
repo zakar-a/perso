@@ -7,7 +7,7 @@ import AdminSettings from './pages/AdminSettings';
 import { Users, LayoutDashboard, Scissors, LogOut, Settings } from 'lucide-react';
 
 const AppContent = () => {
-  const { currentUser, logout } = useAppContext();
+  const { currentUser, logout, loading } = useAppContext();
   const [activeTab, setActiveTab] = useState('dashboard');
 
   // Handle automatic role-based tab selection on login
@@ -16,6 +16,15 @@ const AppContent = () => {
       setActiveTab(currentUser.role === 'patron' ? 'dashboard' : 'prestation');
     }
   }, [currentUser]);
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: '20px' }}>
+        <img src="/mazagan-logo.png" alt="Mazagan" style={{ height: '60px', animation: 'pulse 2s infinite' }} />
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', letterSpacing: '2px' }}>CHARGEMENT DES DONNÉES...</p>
+      </div>
+    );
+  }
 
   if (!currentUser) {
     return <LoginPage />;

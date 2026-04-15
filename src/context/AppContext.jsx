@@ -1,67 +1,53 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const AppContext = createContext();
 
 export const useAppContext = () => useContext(AppContext);
 
 export const AppProvider = ({ children }) => {
-  const [salons, setSalons] = useState(() => {
-    const saved = localStorage.getItem('salon_list');
-    return saved ? JSON.parse(saved) : [
-      { id: 1, name: 'Mazagan - Salon Princier', location: 'Paris 8e' },
-      { id: 2, name: 'Mazagan - L\'Atelier', location: 'Paris 15e' },
-      { id: 3, name: 'Mazagan - Vogue', location: 'Neuilly' }
-    ];
-  });
-
-  const [users, setUsers] = useState(() => {
-    const saved = localStorage.getItem('salon_users');
-    return saved ? JSON.parse(saved) : [
-      { id: 'u1', username: 'patron', password: '123', name: 'Patron Mazagan', role: 'patron', assignedSalons: [1, 2, 3] },
-      { id: 'c1', username: 'karim', password: '123', name: 'Karim', role: 'coiffeur', assignedSalons: [1, 2] },
-      { id: 'c2', username: 'sarah', password: '123', name: 'Sarah', role: 'coiffeur', assignedSalons: [1] }
-    ];
-  });
-
-  const [services, setServices] = useState(() => {
-    const saved = localStorage.getItem('salon_services');
-    return saved ? JSON.parse(saved) : [
-      { id: 'barbe', name: 'Taille Barbe', color: 'barbe', prices: { 1: 15, 2: 15, 3: 15 } },
-      { id: 'adulte', name: 'Coupe Adulte', color: 'adulte', prices: { 1: 25, 2: 25, 3: 25 } },
-      { id: 'enfant', name: 'Coupe Enfant', color: 'enfant', prices: { 1: 18, 2: 18, 3: 18 } },
-      { id: 'produit', name: 'Vente Produit', color: 'produit', prices: { 1: 10, 2: 10, 3: 10 } }
-    ];
-  });
-
-  const [transactions, setTransactions] = useState(() => {
-    const saved = localStorage.getItem('salon_transactions');
-    return saved ? JSON.parse(saved) : [];
-  });
-
+  const [salons, setSalons] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [services, setServices] = useState([]);
+  const [transactions, setTransactions] = useState([]);
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = localStorage.getItem('salon_current_user');
     return saved ? JSON.parse(saved) : null;
   });
+  const [loading, setLoading] = useState(true);
 
+  // Data Fetching from Supabase
   useEffect(() => {
-    localStorage.setItem('salon_transactions', JSON.stringify(transactions));
-  }, [transactions]);
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [{ data: sData }, { data: uData }, { data: svData }, { data: tData }] = await Promise.all([
+          supabase.from('salons').select('*'),
+          supabase.from('users').select('*'),
+          supabase.from('services').select('*'),
+          supabase.from('transactions').select('*').order('timestamp', { ascending: false })
+        ]);
+
+        if (sData) setSalons(sData);
+        if (uData) setUsers(uData.map(u => ({ ...u, assignedSalons: u.assigned_salons || [] })));
+        if (svData) setServices(svData);
+        if (tData) setTransactions(tData.map(t => ({
+          ...t, coiffeurId: t.coiffeur_id, coiffeurName: t.coiffeur_name,
+          salonId: t.salon_id, serviceId: t.service_id, serviceName: t.service_name, paymentMethod: t.payment_method
+        })));
+      } catch (err) { console.error("Fetch error:", err); }
+      finally { setLoading(false); }
+    };
+    fetchData();
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('salon_current_user', JSON.stringify(currentUser));
   }, [currentUser]);
-
-  useEffect(() => {
-    localStorage.setItem('salon_users', JSON.stringify(users));
-  }, [users]);
-
-  useEffect(() => {
-    localStorage.setItem('salon_list', JSON.stringify(salons));
-  }, [salons]);
-
-  useEffect(() => {
-    localStorage.setItem('salon_services', JSON.stringify(services));
-  }, [services]);
 
   const login = (username, password) => {
     const user = users.find(u => u.username === username && u.password === password);
@@ -76,49 +62,79 @@ export const AppProvider = ({ children }) => {
     setCurrentUser(null);
   };
 
-  const addUser = (userData) => {
+  const addUser = async (userData) => {
+    const id = 'u' + Date.now();
     const newUser = {
-      ...userData,
-      id: 'u' + Date.now(),
-      password: userData.password || '123'
+      id, username: userData.username, password: userData.password || '123',
+      name: userData.name, role: userData.role, assigned_salons: userData.assignedSalons
     };
-    setUsers(prev => [...prev, newUser]);
+    const { error } = await supabase.from('users').insert([newUser]);
+    if (!error) setUsers(prev => [...prev, { ...userData, id, assignedSalons: userData.assignedSalons }]);
   };
 
-  const updateServicePrice = (serviceId, salonId, newPrice) => {
-    setServices(prev => prev.map(s => {
-      if (s.id === serviceId) {
-        return {
-          ...s,
-          prices: { ...s.prices, [salonId]: parseFloat(newPrice) }
-        };
-      }
-      return s;
-    }));
+  const updateUser = async (userId, userData) => {
+    const updateData = {
+      name: userData.name, username: userData.username, password: userData.password,
+      role: userData.role, assigned_salons: userData.assignedSalons
+    };
+    const { error } = await supabase.from('users').update(updateData).eq('id', userId);
+    if (!error) setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...userData } : u));
   };
 
-  const addTransaction = (coiffeurId, serviceId, paymentMethod, salonId) => {
+  const deleteUser = async (userId) => {
+    if (confirm("Supprimer cet employé ?")) {
+      const { error } = await supabase.from('users').delete().eq('id', userId);
+      if (!error) setUsers(prev => prev.filter(u => u.id !== userId));
+    }
+  };
+
+  const addSalon = async (salonData) => {
+    const { data, error } = await supabase.from('salons').insert([salonData]).select();
+    if (!error && data) setSalons(prev => [...prev, data[0]]);
+  };
+
+  const updateSalon = async (salonId, salonData) => {
+    const { error } = await supabase.from('salons').update(salonData).eq('id', salonId);
+    if (!error) setSalons(prev => prev.map(s => s.id === salonId ? { ...s, ...salonData } : s));
+  };
+
+  const deleteSalon = async (salonId) => {
+    if (confirm("Supprimer ce salon ?")) {
+      const { error } = await supabase.from('salons').delete().eq('id', salonId);
+      if (!error) setSalons(prev => prev.filter(s => s.id !== salonId));
+    }
+  };
+
+  const updateServicePrice = async (serviceId, salonId, newPrice) => {
+    const service = services.find(s => s.id === serviceId);
+    if (!service) return;
+    const newPrices = { ...service.prices, [salonId]: parseFloat(newPrice) };
+    const { error } = await supabase.from('services').update({ prices: newPrices }).eq('id', serviceId);
+    if (!error) setServices(prev => prev.map(s => s.id === serviceId ? { ...s, prices: newPrices } : s));
+  };
+
+  const addTransaction = async (coiffeurId, serviceId, paymentMethod, salonId) => {
     const user = users.find(u => u.id === coiffeurId);
     const service = services.find(s => s.id === serviceId);
-    
-    // Resolve price based on the selected salon
     const prices = service?.prices || {};
     const price = prices[salonId] || prices[Object.keys(prices)[0]] || 0;
     
     const newTransaction = {
-      id: Date.now(),
-      timestamp: new Date().toISOString(),
-      coiffeurId,
-      coiffeurName: user?.name || 'Inconnu',
-      salonId: parseInt(salonId),
-      serviceId,
-      serviceName: service?.name || 'Autre',
-      paymentMethod,
-      amount: price
+      coiffeur_id: coiffeurId, coiffeur_name: user?.name, salon_id: parseInt(salonId),
+      service_id: serviceId, service_name: service?.name, payment_method: paymentMethod, amount: price
     };
 
-    setTransactions(prev => [newTransaction, ...prev]);
-    return newTransaction;
+    const { data, error } = await supabase.from('transactions').insert([newTransaction]).select();
+    if (!error && data) {
+      const formatted = {
+        ...data[0], coiffeurId: data[0].coiffeur_id, coiffeurName: data[0].coiffeur_name,
+        salonId: data[0].salon_id, serviceId: data[0].service_id, serviceName: data[0].service_name,
+        paymentMethod: data[0].payment_method
+      };
+      setTransactions(prev => [formatted, ...prev]);
+      return formatted;
+    }
+    return null;
   };
 
   const getStats = (filter = 'day', salonId = null, customRange = null) => {
@@ -201,19 +217,12 @@ export const AppProvider = ({ children }) => {
 
   return (
     <AppContext.Provider value={{ 
-      salons, 
-      users,
-      services, 
-      transactions, 
-      currentUser, 
-      setCurrentUser, 
-      login,
-      logout,
-      addUser,
-      updateServicePrice,
-      addTransaction, 
-      getStats,
-      downloadCSV
+      salons, users, services, transactions, 
+      currentUser, setCurrentUser, loading,
+      login, logout, addUser, updateUser, deleteUser,
+      addSalon, updateSalon, deleteSalon,
+      updateServicePrice, addTransaction, 
+      getStats, downloadCSV
     }}>
       {children}
     </AppContext.Provider>

@@ -1,22 +1,52 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { UserPlus, Shield, Scissors, MapPin, Check, Plus, X } from 'lucide-react';
+import { UserPlus, Shield, Scissors, MapPin, Check, Plus, X, Trash2, Edit2, Store } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const AdminSettings = () => {
-  const { users, salons, services, addUser, updateServicePrice } = useAppContext();
+  const { 
+    users, salons, services, 
+    addUser, updateUser, deleteUser,
+    addSalon, updateSalon, deleteSalon, 
+    updateServicePrice 
+  } = useAppContext();
+  
   const [activeSubTab, setActiveSubTab] = useState('employees');
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [newEmployee, setNewEmployee] = useState({
-    name: '',
-    username: '',
-    password: '',
-    role: 'coiffeur',
-    assignedSalons: []
+  const [showEmployeeModal, setShowEmployeeModal] = useState(false);
+  const [showSalonModal, setShowSalonModal] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+
+  const [employeeFormData, setEmployeeFormData] = useState({
+    name: '', username: '', password: '', role: 'coiffeur', assignedSalons: []
   });
 
-  const handleToggleSalon = (salonId) => {
-    setNewEmployee(prev => ({
+  const [salonFormData, setSalonFormData] = useState({
+    name: '', location: ''
+  });
+
+  const handleEditEmployee = (user) => {
+    setEditingItem(user);
+    setEmployeeFormData({
+      name: user.name,
+      username: user.username,
+      password: user.password,
+      role: user.role,
+      assignedSalons: user.assignedSalons
+    });
+    setShowEmployeeModal(true);
+  };
+
+  const handleEditSalon = (salon) => {
+    setEditingItem(salon);
+    setSalonFormData({
+      name: salon.name,
+      location: salon.location
+    });
+    setShowSalonModal(true);
+  };
+
+  const handleToggleSalonAssignment = (salonId) => {
+    setEmployeeFormData(prev => ({
       ...prev,
       assignedSalons: prev.assignedSalons.includes(salonId)
         ? prev.assignedSalons.filter(id => id !== salonId)
@@ -26,13 +56,32 @@ const AdminSettings = () => {
 
   const handleSubmitEmployee = (e) => {
     e.preventDefault();
-    if (newEmployee.assignedSalons.length === 0) {
+    if (employeeFormData.assignedSalons.length === 0) {
       alert("Veuillez assigner au moins un salon.");
       return;
     }
-    addUser(newEmployee);
-    setShowAddModal(false);
-    setNewEmployee({ name: '', username: '', password: '', role: 'coiffeur', assignedSalons: [] });
+    
+    if (editingItem) {
+      updateUser(editingItem.id, employeeFormData);
+    } else {
+      addUser(employeeFormData);
+    }
+    
+    setShowEmployeeModal(false);
+    setEditingItem(null);
+    setEmployeeFormData({ name: '', username: '', password: '', role: 'coiffeur', assignedSalons: [] });
+  };
+
+  const handleSubmitSalon = (e) => {
+    e.preventDefault();
+    if (editingItem) {
+      updateSalon(editingItem.id, salonFormData);
+    } else {
+      addSalon(salonFormData);
+    }
+    setShowSalonModal(false);
+    setEditingItem(null);
+    setSalonFormData({ name: '', location: '' });
   };
 
   return (
@@ -49,6 +98,15 @@ const AdminSettings = () => {
           }}
         >Équipe</button>
         <button 
+          onClick={() => setActiveSubTab('salons')}
+          style={{ 
+            flex: 1, padding: '10px', border: 'none', 
+            background: activeSubTab === 'salons' ? 'rgba(255,255,255,0.1)' : 'transparent',
+            color: activeSubTab === 'salons' ? 'white' : 'var(--text-secondary)',
+            borderRadius: '10px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600
+          }}
+        >Salons</button>
+        <button 
           onClick={() => setActiveSubTab('services')}
           style={{ 
             flex: 1, padding: '10px', border: 'none', 
@@ -56,14 +114,14 @@ const AdminSettings = () => {
             color: activeSubTab === 'services' ? 'white' : 'var(--text-secondary)',
             borderRadius: '10px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600
           }}
-        >Services & Tarifs</button>
+        >Tarifs</button>
       </div>
 
-      {activeSubTab === 'employees' ? (
+      {activeSubTab === 'employees' && (
         <>
           <div className="flex-between" style={{ marginBottom: '1.5rem' }}>
             <h2 style={{ fontSize: '1.2rem' }}>Gestion de l'Équipe</h2>
-            <button className="btn-primary" onClick={() => setShowAddModal(true)} style={{ padding: '8px 16px', fontSize: '0.9rem' }}>
+            <button className="btn-primary" onClick={() => { setEditingItem(null); setEmployeeFormData({ name: '', username: '', password: '', role: 'coiffeur', assignedSalons: [] }); setShowEmployeeModal(true); }} style={{ padding: '8px 16px', fontSize: '0.9rem' }}>
               <UserPlus size={18} /> Ajouter
             </button>
           </div>
@@ -81,26 +139,79 @@ const AdminSettings = () => {
                   </div>
                   <div>
                     <div style={{ fontWeight: 600 }}>{user.name}</div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                       @{user.username} • {user.role === 'patron' ? 'Patron' : 'Coiffeur'}
                     </div>
                   </div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Accès Salons</div>
-                  <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
-                    {user.assignedSalons.map(sid => (
-                      <span key={sid} style={{ 
-                        background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem' 
-                      }}>#{sid}</span>
-                    ))}
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <div style={{ textAlign: 'right', marginRight: '10px' }}>
+                    <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
+                      {user.assignedSalons.map(sid => (
+                        <span key={sid} style={{ 
+                          background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.65rem' 
+                        }}>#{salons.find(s=>s.id === sid)?.id || sid}</span>
+                      ))}
+                    </div>
                   </div>
+                  <button onClick={() => handleEditEmployee(user)} style={{ background: 'transparent', border: 'none', color: 'var(--accent-cyan)', cursor: 'pointer' }}>
+                    <Edit2 size={18} />
+                  </button>
+                  {user.username !== 'patron' && (
+                    <button onClick={() => deleteUser(user.id)} style={{ background: 'transparent', border: 'none', color: '#ff4d4d', cursor: 'pointer' }}>
+                      <Trash2 size={18} />
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         </>
-      ) : (
+      )}
+
+      {activeSubTab === 'salons' && (
+        <div className="animate-in">
+          <div className="flex-between" style={{ marginBottom: '1.5rem' }}>
+            <h2 style={{ fontSize: '1.2rem' }}>Gestion des Salons</h2>
+            <button className="btn-primary" onClick={() => { setEditingItem(null); setSalonFormData({ name: '', location: '' }); setShowSalonModal(true); }} style={{ padding: '8px 16px', fontSize: '0.9rem' }}>
+              <Plus size={18} /> Ajouter
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {salons.map(salon => (
+              <div key={salon.id} className="glass-card" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ 
+                    width: '40px', height: '40px', borderRadius: '12px', 
+                    background: 'rgba(255,255,255,0.05)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--surface-border)'
+                  }}>
+                    <Store size={20} color="var(--accent-cyan)" />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 600 }}>{salon.name}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                      <MapPin size={12} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
+                      {salon.location}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button onClick={() => handleEditSalon(salon)} style={{ background: 'transparent', border: 'none', color: 'var(--accent-cyan)', cursor: 'pointer' }}>
+                    <Edit2 size={18} />
+                  </button>
+                  <button onClick={() => deleteSalon(salon.id)} style={{ background: 'transparent', border: 'none', color: '#ff4d4d', cursor: 'pointer' }}>
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {activeSubTab === 'services' && (
         <div className="animate-in">
           <h2 style={{ fontSize: '1.2rem', marginBottom: '1.5rem' }}>Configuration des Tarifs</h2>
           <div className="glass-card" style={{ padding: '0', overflow: 'hidden' }}>
@@ -149,9 +260,9 @@ const AdminSettings = () => {
         </div>
       )}
 
-      {/* Add Employee Modal Overlay */}
+      {/* Employee Modal Overlay */}
       <AnimatePresence>
-        {showAddModal && (
+        {showEmployeeModal && (
           <div style={{ 
             position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)',
             zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
@@ -164,13 +275,13 @@ const AdminSettings = () => {
               style={{ width: '100%', maxWidth: '450px', position: 'relative' }}
             >
               <button 
-                onClick={() => setShowAddModal(false)}
+                onClick={() => setShowEmployeeModal(false)}
                 style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'transparent', border: 'none', color: 'white', cursor: 'pointer' }}
               >
                 <X size={24} />
               </button>
 
-              <h3 style={{ marginBottom: '1.5rem' }}>Nouvel Employé</h3>
+              <h3 style={{ marginBottom: '1.5rem' }}>{editingItem ? 'Modifier' : 'Ajouter'} Employé</h3>
 
               <form onSubmit={handleSubmitEmployee}>
                 <div style={{ marginBottom: '1rem' }}>
@@ -178,8 +289,8 @@ const AdminSettings = () => {
                   <input 
                     className="glass"
                     style={{ width: '100%', padding: '12px', color: 'white', border: '1px solid var(--surface-border)', outline: 'none' }}
-                    value={newEmployee.name}
-                    onChange={e => setNewEmployee({...newEmployee, name: e.target.value})}
+                    value={employeeFormData.name}
+                    onChange={e => setEmployeeFormData({...employeeFormData, name: e.target.value})}
                     required
                   />
                 </div>
@@ -190,8 +301,8 @@ const AdminSettings = () => {
                     <input 
                       className="glass"
                       style={{ width: '100%', padding: '12px', color: 'white', outline: 'none' }}
-                      value={newEmployee.username}
-                      onChange={e => setNewEmployee({...newEmployee, username: e.target.value.toLowerCase()})}
+                      value={employeeFormData.username}
+                      onChange={e => setEmployeeFormData({...employeeFormData, username: e.target.value.toLowerCase()})}
                       required
                     />
                   </div>
@@ -201,9 +312,10 @@ const AdminSettings = () => {
                       type="password"
                       className="glass"
                       style={{ width: '100%', padding: '12px', color: 'white', outline: 'none' }}
-                      value={newEmployee.password}
-                      onChange={e => setNewEmployee({...newEmployee, password: e.target.value})}
-                      required
+                      placeholder={editingItem ? "Laisser vide pour ne pas changer" : "Mot de passe"}
+                      value={employeeFormData.password}
+                      onChange={e => setEmployeeFormData({...employeeFormData, password: e.target.value})}
+                      required={!editingItem}
                     />
                   </div>
                 </div>
@@ -214,25 +326,82 @@ const AdminSettings = () => {
                     {salons.map(salon => (
                       <div 
                         key={salon.id}
-                        onClick={() => handleToggleSalon(salon.id)}
+                        onClick={() => handleToggleSalonAssignment(salon.id)}
                         className="glass"
                         style={{ 
                           padding: '10px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          border: newEmployee.assignedSalons.includes(salon.id) ? '1px solid var(--accent-cyan)' : '1px solid transparent'
+                          border: employeeFormData.assignedSalons.includes(salon.id) ? '1px solid var(--accent-cyan)' : '1px solid transparent'
                         }}
                       >
                         <div>
                           <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{salon.name}</div>
                           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{salon.location}</div>
                         </div>
-                        {newEmployee.assignedSalons.includes(salon.id) && <Check size={18} color="var(--accent-cyan)" />}
+                        {employeeFormData.assignedSalons.includes(salon.id) && <Check size={18} color="var(--accent-cyan)" />}
                       </div>
                     ))}
                   </div>
                 </div>
 
                 <button type="submit" className="btn-primary" style={{ width: '100%' }}>
-                  Enregistrer l'employé
+                  {editingItem ? 'Mettre à jour' : "Enregistrer l'employé"}
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Salon Modal Overlay */}
+      <AnimatePresence>
+        {showSalonModal && (
+          <div style={{ 
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)',
+            zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
+          }}>
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="glass-card" 
+              style={{ width: '100%', maxWidth: '400px', position: 'relative' }}
+            >
+              <button 
+                onClick={() => setShowSalonModal(false)}
+                style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'transparent', border: 'none', color: 'white', cursor: 'pointer' }}
+              >
+                <X size={24} />
+              </button>
+
+              <h3 style={{ marginBottom: '1.5rem' }}>{editingItem ? 'Modifier' : 'Ajouter'} Salon</h3>
+
+              <form onSubmit={handleSubmitSalon}>
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Nom du Salon</label>
+                  <input 
+                    className="glass"
+                    style={{ width: '100%', padding: '12px', color: 'white', border: '1px solid var(--surface-border)', outline: 'none' }}
+                    value={salonFormData.name}
+                    onChange={e => setSalonFormData({...salonFormData, name: e.target.value})}
+                    placeholder="ex: Mazagan Royale"
+                    required
+                  />
+                </div>
+
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Emplacement</label>
+                  <input 
+                    className="glass"
+                    style={{ width: '100%', padding: '12px', color: 'white', border: '1px solid var(--surface-border)', outline: 'none' }}
+                    value={salonFormData.location}
+                    onChange={e => setSalonFormData({...salonFormData, location: e.target.value})}
+                    placeholder="ex: Paris 8e"
+                    required
+                  />
+                </div>
+
+                <button type="submit" className="btn-primary" style={{ width: '100%' }}>
+                  {editingItem ? 'Mettre à jour' : "Créer le salon"}
                 </button>
               </form>
             </motion.div>
