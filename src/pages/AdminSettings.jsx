@@ -475,6 +475,9 @@ const AdminSettings = () => {
               </form>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
       {/* Service Modal Overlay */}
       <AnimatePresence>
         {showServiceModal && (
