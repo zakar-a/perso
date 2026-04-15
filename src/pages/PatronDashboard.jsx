@@ -192,15 +192,16 @@ const PatronDashboard = () => {
         <div className="glass-card" style={{ height: '240px' }}>
           <h3 style={{ fontSize: '1rem', marginBottom: '1rem' }}>Performance Salariés</h3>
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={employeeChartData} layout="vertical">
+            <BarChart data={employeeChartData} layout="vertical" margin={{ left: -20, right: 10 }}>
               <XAxis type="number" hide />
-              <YAxis dataKey="name" type="category" width={80} style={{ fontSize: '0.75rem' }} />
+              <YAxis dataKey="name" type="category" width={100} style={{ fontSize: '0.7rem' }} axisLine={false} tickLine={false} />
               <Tooltip 
+                cursor={false}
                 contentStyle={{ background: '#1e1b4b', border: 'none', borderRadius: '8px', color: 'white' }}
                 itemStyle={{ color: 'white' }}
                 formatter={(value) => `${value}€`}
               />
-              <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+              <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={12}>
                 {employeeChartData.map((entry, index) => (
                   <Cell key={`cell-emp-${index}`} fill={COLORS[(index + 1) % COLORS.length]} />
                 ))}
