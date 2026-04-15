@@ -123,6 +123,23 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  const addService = async (serviceData) => {
+    const { data, error } = await supabase.from('services').insert([serviceData]).select();
+    if (!error && data) setServices(prev => [...prev, data[0]]);
+  };
+
+  const updateService = async (serviceId, serviceData) => {
+    const { error } = await supabase.from('services').update(serviceData).eq('id', serviceId);
+    if (!error) setServices(prev => prev.map(s => s.id === serviceId ? { ...s, ...serviceData } : s));
+  };
+
+  const deleteService = async (serviceId) => {
+    if (confirm("Supprimer cette prestation ?")) {
+      const { error } = await supabase.from('services').delete().eq('id', serviceId);
+      if (!error) setServices(prev => prev.filter(s => s.id !== serviceId));
+    }
+  };
+
   const updateServicePrice = async (serviceId, salonId, newPrice) => {
     const service = services.find(s => s.id === serviceId);
     if (!service) return;
@@ -239,6 +256,7 @@ export const AppProvider = ({ children }) => {
       currentUser, setCurrentUser, loading, error,
       login, logout, addUser, updateUser, deleteUser,
       addSalon, updateSalon, deleteSalon,
+      addService, updateService, deleteService,
       updateServicePrice, addTransaction, 
       getStats, downloadCSV
     }}>

@@ -14,6 +14,7 @@ const AdminSettings = () => {
   const [activeSubTab, setActiveSubTab] = useState('employees');
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   const [showSalonModal, setShowSalonModal] = useState(false);
+  const [showServiceModal, setShowServiceModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
 
   const [employeeFormData, setEmployeeFormData] = useState({
@@ -23,6 +24,16 @@ const AdminSettings = () => {
   const [salonFormData, setSalonFormData] = useState({
     name: '', location: ''
   });
+
+  const [serviceFormData, setServiceFormData] = useState({
+    id: '', name: '', color: 'adulte', prices: {}
+  });
+
+  const handleEditService = (service) => {
+    setEditingItem(service);
+    setServiceFormData(service);
+    setShowServiceModal(true);
+  };
 
   const handleEditEmployee = (user) => {
     setEditingItem(user);
@@ -84,6 +95,21 @@ const AdminSettings = () => {
     setSalonFormData({ name: '', location: '' });
   };
 
+  const handleSubmitService = (e) => {
+    e.preventDefault();
+    if (editingItem) {
+      const { id, ...data } = serviceFormData;
+      updateService(editingItem.id, data);
+    } else {
+      const id = serviceFormData.id || serviceFormData.name.toLowerCase().replace(/\s+/g, '-');
+      const newService = { ...serviceFormData, id };
+      addService(newService);
+    }
+    setShowServiceModal(false);
+    setEditingItem(null);
+    setServiceFormData({ id: '', name: '', color: 'adulte', prices: {} });
+  };
+
   return (
     <div className="admin-settings animate-in">
       {/* Sub-Tabs */}
@@ -103,16 +129,25 @@ const AdminSettings = () => {
             flex: 1, padding: '10px', border: 'none', 
             background: activeSubTab === 'salons' ? 'rgba(255,255,255,0.1)' : 'transparent',
             color: activeSubTab === 'salons' ? 'white' : 'var(--text-secondary)',
-            borderRadius: '10px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600
+            borderRadius: '10px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600
           }}
         >Salons</button>
+        <button 
+          onClick={() => setActiveSubTab('presta')}
+          style={{ 
+            flex: 1, padding: '10px', border: 'none', 
+            background: activeSubTab === 'presta' ? 'rgba(255,255,255,0.1)' : 'transparent',
+            color: activeSubTab === 'presta' ? 'white' : 'var(--text-secondary)',
+            borderRadius: '10px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600
+          }}
+        >Services</button>
         <button 
           onClick={() => setActiveSubTab('services')}
           style={{ 
             flex: 1, padding: '10px', border: 'none', 
             background: activeSubTab === 'services' ? 'rgba(255,255,255,0.1)' : 'transparent',
             color: activeSubTab === 'services' ? 'white' : 'var(--text-secondary)',
-            borderRadius: '10px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600
+            borderRadius: '10px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600
           }}
         >Tarifs</button>
       </div>
@@ -202,6 +237,40 @@ const AdminSettings = () => {
                     <Edit2 size={18} />
                   </button>
                   <button onClick={() => deleteSalon(salon.id)} style={{ background: 'transparent', border: 'none', color: '#ff4d4d', cursor: 'pointer' }}>
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {activeSubTab === 'presta' && (
+        <div className="animate-in">
+          <div className="flex-between" style={{ marginBottom: '1.5rem' }}>
+            <h2 style={{ fontSize: '1.2rem' }}>Gestion des Prestations</h2>
+            <button className="btn-primary" onClick={() => { setEditingItem(null); setServiceFormData({ id: '', name: '', color: 'adulte', prices: {} }); setShowServiceModal(true); }} style={{ padding: '8px 16px', fontSize: '0.9rem' }}>
+              <Plus size={18} /> Ajouter
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {services.map(service => (
+              <div key={service.id} className="glass-card" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div className={`service-btn ${service.color}`} style={{ width: '40px', height: '40px', borderRadius: '12px', padding: '0', flexShrink: 0 }}>
+                    <Scissors size={20} />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 600 }}>{service.name}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>ID: {service.id}</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button onClick={() => handleEditService(service)} style={{ background: 'transparent', border: 'none', color: 'var(--accent-cyan)', cursor: 'pointer' }}>
+                    <Edit2 size={18} />
+                  </button>
+                  <button onClick={() => deleteService(service.id)} style={{ background: 'transparent', border: 'none', color: '#ff4d4d', cursor: 'pointer' }}>
                     <Trash2 size={18} />
                   </button>
                 </div>
@@ -402,6 +471,81 @@ const AdminSettings = () => {
 
                 <button type="submit" className="btn-primary" style={{ width: '100%' }}>
                   {editingItem ? 'Mettre à jour' : "Créer le salon"}
+                </button>
+              </form>
+            </motion.div>
+          </div>
+      {/* Service Modal Overlay */}
+      <AnimatePresence>
+        {showServiceModal && (
+          <div style={{ 
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)',
+            zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
+          }}>
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="glass-card" 
+              style={{ width: '100%', maxWidth: '400px', position: 'relative' }}
+            >
+              <button 
+                onClick={() => setShowServiceModal(false)}
+                style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'transparent', border: 'none', color: 'white', cursor: 'pointer' }}
+              >
+                <X size={24} />
+              </button>
+
+              <h3 style={{ marginBottom: '1.5rem' }}>{editingItem ? 'Modifier' : 'Ajouter'} Prestation</h3>
+
+              <form onSubmit={handleSubmitService}>
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Nom de la prestation</label>
+                  <input 
+                    className="glass"
+                    style={{ width: '100%', padding: '12px', color: 'white', border: '1px solid var(--surface-border)', outline: 'none' }}
+                    value={serviceFormData.name}
+                    onChange={e => setServiceFormData({...serviceFormData, name: e.target.value})}
+                    placeholder="ex: Coupe VIP"
+                    required
+                  />
+                </div>
+
+                {!editingItem && (
+                  <div style={{ marginBottom: '1rem' }}>
+                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Identifiant unique (Optionnel)</label>
+                    <input 
+                      className="glass"
+                      style={{ width: '100%', padding: '12px', color: 'white', border: '1px solid var(--surface-border)', outline: 'none' }}
+                      value={serviceFormData.id}
+                      onChange={e => setServiceFormData({...serviceFormData, id: e.target.value.toLowerCase().replace(/\s+/g, '-')})}
+                      placeholder="ex: coupe-vip"
+                    />
+                  </div>
+                )}
+
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '10px' }}>Style de couleur</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    {['adulte', 'barbe', 'enfant', 'produit'].map(c => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => setServiceFormData({...serviceFormData, color: c})}
+                        className={`service-btn ${c}`}
+                        style={{ 
+                          padding: '10px', height: 'auto', fontSize: '0.8rem', borderRadius: '12px',
+                          border: serviceFormData.color === c ? '2px solid white' : '2px solid transparent'
+                        }}
+                      >
+                        {c.charAt(0).toUpperCase() + c.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <button type="submit" className="btn-primary" style={{ width: '100%' }}>
+                  {editingItem ? 'Mettre à jour' : "Créer la prestation"}
                 </button>
               </form>
             </motion.div>
