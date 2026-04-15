@@ -312,7 +312,7 @@ const AdminSettings = () => {
                               width: '60px', padding: '6px', textAlign: 'center', border: 'none', color: 'var(--accent-cyan)',
                               fontWeight: 700, borderRadius: '8px', outline: 'none'
                              }}
-                            value={service.prices[salon.id] || 0}
+                            value={(service.prices && service.prices[salon.id]) || 0}
                             onChange={(e) => updateServicePrice(service.id, salon.id, e.target.value)}
                           />
                           <span style={{ marginLeft: '4px', fontSize: '0.7rem', color: 'var(--text-secondary)' }}>€</span>

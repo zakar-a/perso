@@ -143,7 +143,9 @@ export const AppProvider = ({ children }) => {
   const updateServicePrice = async (serviceId, salonId, newPrice) => {
     const service = services.find(s => s.id === serviceId);
     if (!service) return;
-    const newPrices = { ...service.prices, [salonId]: parseFloat(newPrice) };
+    const currentPrices = service.prices || {};
+    const priceValue = newPrice === '' ? 0 : parseFloat(newPrice);
+    const newPrices = { ...currentPrices, [salonId]: priceValue };
     const { error } = await supabase.from('services').update({ prices: newPrices }).eq('id', serviceId);
     if (!error) setServices(prev => prev.map(s => s.id === serviceId ? { ...s, prices: newPrices } : s));
   };
