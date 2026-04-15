@@ -55,14 +55,14 @@ h1, h2, h3, h4 {
 }
 
 .glass-card {
-  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+  background: linear-gradient(135deg, rgba(15, 17, 26, 0.95) 0%, rgba(10, 11, 16, 0.9) 100%);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--surface-border);
   border-radius: var(--radius-lg);
   padding: 1.5rem;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  max-height: 90vh;
+  box-shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.6);
+  max-height: 85vh;
   overflow-y: auto;
 }
 

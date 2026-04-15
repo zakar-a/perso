@@ -8,6 +8,7 @@ const AdminSettings = () => {
     users, salons, services, 
     addUser, updateUser, deleteUser,
     addSalon, updateSalon, deleteSalon, 
+    addService, updateService, deleteService,
     updateServicePrice 
   } = useAppContext();
   
@@ -333,8 +334,9 @@ const AdminSettings = () => {
       <AnimatePresence>
         {showEmployeeModal && (
           <div style={{ 
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)',
-            zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)',
+            zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', 
+            padding: '70px 1rem 2rem 1rem', overflowY: 'auto'
           }}>
             <motion.div 
               initial={{ scale: 0.9, opacity: 0 }}
@@ -425,8 +427,9 @@ const AdminSettings = () => {
       <AnimatePresence>
         {showSalonModal && (
           <div style={{ 
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)',
-            zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)',
+            zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', 
+            padding: '70px 1rem 2rem 1rem', overflowY: 'auto'
           }}>
             <motion.div 
               initial={{ scale: 0.9, opacity: 0 }}
@@ -482,8 +485,9 @@ const AdminSettings = () => {
       <AnimatePresence>
         {showServiceModal && (
           <div style={{ 
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)',
-            zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)',
+            zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', 
+            padding: '70px 1rem 2rem 1rem', overflowY: 'auto'
           }}>
             <motion.div 
               initial={{ scale: 0.9, opacity: 0 }}
@@ -538,6 +542,7 @@ const AdminSettings = () => {
                         className={`service-btn ${c}`}
                         style={{ 
                           padding: '10px', height: 'auto', fontSize: '0.8rem', borderRadius: '12px',
+                          aspectRatio: 'auto',
                           border: serviceFormData.color === c ? '2px solid white' : '2px solid transparent'
                         }}
                       >
