@@ -25,6 +25,17 @@ const PatronDashboard = () => {
     }));
   }, [stats]);
 
+  const employeeChartData = useMemo(() => {
+    const data = {};
+    stats.filtered.forEach(t => {
+      data[t.coiffeurName] = (data[t.coiffeurName] || 0) + t.amount;
+    });
+    return Object.keys(data).map(name => ({
+      name,
+      value: parseFloat(data[name].toFixed(2))
+    }));
+  }, [stats]);
+
   const handleExport = () => {
     downloadCSV(stats.filtered);
   };
@@ -156,23 +167,47 @@ const PatronDashboard = () => {
         </div>
       </div>
 
-      {/* Chart */}
-      <div className="glass-card" style={{ marginBottom: '1.5rem', height: '240px' }}>
-        <h3 style={{ fontSize: '1rem', marginBottom: '1rem' }}>Secteurs d'activité</h3>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData}>
-            <XAxis dataKey="name" hide />
-            <Tooltip 
-              contentStyle={{ background: '#1e1b4b', border: 'none', borderRadius: '8px', color: 'white' }}
-              itemStyle={{ color: 'white' }}
-            />
-            <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-              {chartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+      {/* Charts Grid */}
+      <div className="grid-2" style={{ marginBottom: '1.5rem' }}>
+        {/* Service Chart */}
+        <div className="glass-card" style={{ height: '240px' }}>
+          <h3 style={{ fontSize: '1rem', marginBottom: '1rem' }}>Secteurs d'activité</h3>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData}>
+              <XAxis dataKey="name" hide />
+              <Tooltip 
+                contentStyle={{ background: '#1e1b4b', border: 'none', borderRadius: '8px', color: 'white' }}
+                itemStyle={{ color: 'white' }}
+              />
+              <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                {chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Employee Chart */}
+        <div className="glass-card" style={{ height: '240px' }}>
+          <h3 style={{ fontSize: '1rem', marginBottom: '1rem' }}>Performance Salariés</h3>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={employeeChartData} layout="vertical">
+              <XAxis type="number" hide />
+              <YAxis dataKey="name" type="category" width={80} style={{ fontSize: '0.75rem' }} />
+              <Tooltip 
+                contentStyle={{ background: '#1e1b4b', border: 'none', borderRadius: '8px', color: 'white' }}
+                itemStyle={{ color: 'white' }}
+                formatter={(value) => `${value}€`}
+              />
+              <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                {employeeChartData.map((entry, index) => (
+                  <Cell key={`cell-emp-${index}`} fill={COLORS[(index + 1) % COLORS.length]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
       {/* Recent Activity */}
