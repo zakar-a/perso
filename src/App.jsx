@@ -7,7 +7,7 @@ import AdminSettings from './pages/AdminSettings';
 import { Users, LayoutDashboard, Scissors, LogOut, Settings } from 'lucide-react';
 
 const AppContent = () => {
-  const { currentUser, logout, loading } = useAppContext();
+  const { currentUser, logout, loading, error } = useAppContext();
   const [activeTab, setActiveTab] = useState('dashboard');
 
   // Handle automatic role-based tab selection on login
@@ -16,6 +16,19 @@ const AppContent = () => {
       setActiveTab(currentUser.role === 'patron' ? 'dashboard' : 'prestation');
     }
   }, [currentUser]);
+
+  if (error) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: '20px', padding: '2rem', textAlign: 'center' }}>
+        <X size={48} color="#ff4d4d" />
+        <h2 style={{ color: 'white' }}>Erreur de Configuration</h2>
+        <p style={{ color: 'var(--text-secondary)' }}>{error}</p>
+        <div className="glass-card" style={{ fontSize: '0.8rem', textAlign: 'left', marginTop: '1rem' }}>
+          Astuce : Vérifiez que les variables <b>VITE_SUPABASE_URL</b> et <b>VITE_SUPABASE_ANON_KEY</b> sont bien configurées sur Netlify.
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

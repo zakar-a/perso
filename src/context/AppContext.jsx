@@ -3,7 +3,11 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// Safety check before initialization
+const supabase = (supabaseUrl && supabaseAnonKey) 
+  ? createClient(supabaseUrl, supabaseAnonKey) 
+  : null;
 
 const AppContext = createContext();
 
@@ -19,20 +23,34 @@ export const AppProvider = ({ children }) => {
     return saved ? JSON.parse(saved) : null;
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Data Fetching from Supabase
   useEffect(() => {
+    if (!supabase) {
+      setError("Configuration Supabase manquante (Variables d'environnement)");
+      setLoading(false);
+      return;
+    }
+
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [{ data: sData }, { data: uData }, { data: svData }, { data: tData }] = await Promise.all([
+        const [
+          { data: sData, error: sErr }, 
+          { data: uData, error: uErr }, 
+          { data: svData, error: svErr }, 
+          { data: tData, error: tErr }
+        ] = await Promise.all([
           supabase.from('salons').select('*'),
           supabase.from('users').select('*'),
           supabase.from('services').select('*'),
           supabase.from('transactions').select('*').order('timestamp', { ascending: false })
         ]);
 
-        if (sData) setSalons(sData);
+        if (sErr || uErr || svErr || tErr) {
+          throw new Error("Erreur de connexion à la base de données");
+        }
         if (uData) setUsers(uData.map(u => ({ ...u, assignedSalons: u.assigned_salons || [] })));
         if (svData) setServices(svData);
         if (tData) setTransactions(tData.map(t => ({
@@ -218,7 +236,7 @@ export const AppProvider = ({ children }) => {
   return (
     <AppContext.Provider value={{ 
       salons, users, services, transactions, 
-      currentUser, setCurrentUser, loading,
+      currentUser, setCurrentUser, loading, error,
       login, logout, addUser, updateUser, deleteUser,
       addSalon, updateSalon, deleteSalon,
       updateServicePrice, addTransaction, 
