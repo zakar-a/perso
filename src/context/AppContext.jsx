@@ -53,11 +53,20 @@ export const AppProvider = ({ children }) => {
         }
         if (sData) setSalons(sData);
         if (uData && sData) {
-          const validSalonIds = sData.map(s => s.id);
-          setUsers(uData.map(u => ({ 
-            ...u, 
-            assignedSalons: (u.assigned_salons || []).filter(sid => validSalonIds.includes(sid)) 
-          })));
+          const validSalonIds = sData.map(s => String(s.id));
+          const cleanedUsers = uData.map(u => {
+            const assigned = u.assigned_salons || [];
+            const filtered = assigned.filter(sid => validSalonIds.includes(String(sid)));
+            return { ...u, assignedSalons: filtered };
+          });
+          
+          setUsers(cleanedUsers);
+          
+          // Sync current user if logged in
+          if (currentUser) {
+            const updatedMe = cleanedUsers.find(u => u.id === currentUser.id);
+            if (updatedMe) setCurrentUser(updatedMe);
+          }
         }
         if (svData) setServices(svData);
         if (tData) setTransactions(tData.map(t => ({
