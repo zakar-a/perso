@@ -33,7 +33,7 @@ const AppContent = () => {
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: '20px' }}>
-        <img src="/mazagan-logo.png" alt="Mazagan" style={{ height: '60px', animation: 'pulse 2s infinite' }} />
+        <img src="/barber-logo.png" alt="BarberShop Manager" style={{ height: '60px', animation: 'pulse 2s infinite' }} />
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', letterSpacing: '2px' }}>CHARGEMENT DES DONNÉES...</p>
       </div>
     );
@@ -48,7 +48,7 @@ const AppContent = () => {
       {/* Header */}
       <header className="flex-between" style={{ marginBottom: '2rem', marginTop: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <img src="/mazagan-logo.png" alt="Mazagan" style={{ height: '40px' }} />
+          <img src="/barber-logo.png" alt="BarberShop Manager" style={{ height: '40px' }} />
           <div>
             <h1 style={{ fontSize: '1.2rem', fontWeight: 700, letterSpacing: '1px' }}>
               {activeTab === 'dashboard' ? 'Tableau de Bord' : 

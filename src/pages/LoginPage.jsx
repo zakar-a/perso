@@ -42,12 +42,12 @@ const LoginPage = () => {
       >
         <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
           <img 
-            src="/mazagan-logo.png" 
-            alt="Mazagan Logo" 
+            src="/barber-logo.png" 
+            alt="BarberShop Manager" 
             style={{ width: '150px', marginBottom: '1rem', filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.2))' }} 
           />
           <h1 style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' }}>
-            Gestion Mazagan
+            BarberShop Manager
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.5rem' }}>
             Accédez à votre espace professionnel
@@ -145,7 +145,7 @@ const LoginPage = () => {
 
         <div style={{ textAlign: 'center', marginTop: '2rem' }}>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
-            Mazagan Barbershop © 2026<br/>
+            BarberShop Manager © 2026<br/>
             Contactez le patron pour obtenir vos accès
           </p>
         </div>
