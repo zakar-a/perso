@@ -46,8 +46,8 @@ const LoginPage = () => {
             alt="BarberShop Manager" 
             style={{ width: '150px', marginBottom: '1rem', filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.2))' }} 
           />
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' }}>
-            BarberShop Manager
+          <h1 style={{ fontSize: '1.6rem', fontWeight: 800, letterSpacing: '3px', textTransform: 'uppercase', background: 'linear-gradient(135deg, #d4a847, #fff8e7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            BarBer Manager
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.5rem' }}>
             Accédez à votre espace professionnel

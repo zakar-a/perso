@@ -10,8 +10,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['barber-logo.png', 'favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
       manifest: {
-        name: 'BarberShop Manager',
-        short_name: 'BarberShop',
+        name: 'BarBer Manager',
+        short_name: 'BarBer',
         description: 'Système de gestion premium pour votre salon de coiffure',
         theme_color: '#08090d',
         background_color: '#08090d',

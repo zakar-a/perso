@@ -32,9 +32,10 @@ const AppContent = () => {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: '20px' }}>
-        <img src="/barber-logo.png" alt="BarberShop Manager" style={{ height: '60px', animation: 'pulse 2s infinite' }} />
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', letterSpacing: '2px' }}>CHARGEMENT DES DONNÉES...</p>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: '16px' }}>
+        <img src="/barber-logo.png" alt="BarBer Manager" style={{ height: '80px', animation: 'pulse 2s infinite' }} />
+        <h2 style={{ fontSize: '1.4rem', fontWeight: 800, letterSpacing: '3px', textTransform: 'uppercase', background: 'linear-gradient(135deg, #d4a847, #fff8e7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>BarBer Manager</h2>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', letterSpacing: '2px', margin: 0 }}>CHARGEMENT DES DONNÉES...</p>
       </div>
     );
   }
