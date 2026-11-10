@@ -1,11 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList } from 'recharts';
-import { TrendingUp, CreditCard, Banknote, ShoppingBag, Clock, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { TrendingUp, CreditCard, Banknote, ShoppingBag, Clock, Trash2, ChevronDown, ChevronUp, Bell, BellOff, BellRing } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const PatronDashboard = () => {
-  const { salons, getStats, transactions, downloadCSV, cancelTransaction } = useAppContext();
+  const { 
+    salons, getStats, transactions, downloadCSV, cancelTransaction,
+    notifPermission, notifEnabled, setNotifEnabled,
+    requestNotificationPermission, sendDailyRecapNotification
+  } = useAppContext();
   const [selectedSalon, setSelectedSalon] = useState('all');
   const [timeframe, setTimeframe] = useState('day');
   const [showAllActivity, setShowAllActivity] = useState(false);
@@ -62,7 +66,7 @@ const PatronDashboard = () => {
   return (
     <div className="patron-dashboard animate-in">
       {/* Top Header with Export */}
-      <div className="flex-between" style={{ marginBottom: '1rem' }}>
+      <div className="flex-between" style={{ marginBottom: '0.85rem' }}>
         <h2 style={{ fontSize: '1.15rem' }}>Synthèse & Activité</h2>
         <button 
           type="button"
@@ -76,6 +80,86 @@ const PatronDashboard = () => {
         >
           <ShoppingBag size={16} /> Export CSV
         </button>
+      </div>
+
+      {/* 20h Daily Push Notification Bar */}
+      <div className="glass-card" style={{
+        padding: '0.85rem 1rem',
+        marginBottom: '0.9rem',
+        border: notifEnabled && notifPermission === 'granted'
+          ? '1px solid rgba(34, 211, 238, 0.28)'
+          : '1px solid rgba(251, 191, 36, 0.28)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '10px',
+        flexWrap: 'wrap'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
+          <div style={{
+            width: '36px', height: '36px', borderRadius: '10px',
+            background: notifEnabled ? 'rgba(251, 191, 36, 0.16)' : 'rgba(255,255,255,0.06)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+          }}>
+            {notifEnabled ? <BellRing size={18} color="var(--accent-gold)" /> : <BellOff size={18} color="var(--text-secondary)" />}
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'white' }}>
+              Push Bilan 20h00 (CA / Salon)
+            </div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+              {notifPermission === 'granted'
+                ? (notifEnabled ? 'Activé • Envoi auto chaque soir à 20h' : 'En pause')
+                : notifPermission === 'denied'
+                ? 'Autorisez les notifications dans le navigateur'
+                : 'Activez pour recevoir le CA à 20h sur mobile'}
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+          {notifPermission !== 'granted' ? (
+            <button
+              type="button"
+              onClick={requestNotificationPermission}
+              style={{
+                background: 'var(--accent-gold)', color: 'black', border: 'none',
+                padding: '7px 12px', borderRadius: '10px', fontSize: '0.76rem', fontWeight: 700,
+                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px'
+              }}
+            >
+              <Bell size={14} /> Activer
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setNotifEnabled(prev => !prev)}
+              style={{
+                background: notifEnabled ? 'rgba(34, 211, 238, 0.15)' : 'rgba(255,255,255,0.08)',
+                color: notifEnabled ? 'var(--accent-cyan)' : 'var(--text-secondary)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                padding: '7px 10px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              {notifEnabled ? 'Actif' : 'Off'}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => sendDailyRecapNotification(true)}
+            style={{
+              background: 'rgba(251, 191, 36, 0.15)',
+              color: 'var(--accent-gold)',
+              border: '1px solid rgba(251, 191, 36, 0.3)',
+              padding: '7px 11px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 700,
+              cursor: 'pointer'
+            }}
+            title="Envoyer un test de la notification maintenant"
+          >
+            Tester
+          </button>
+        </div>
       </div>
 
       {/* Salon Filter (Horizontal Touch Pills) */}

@@ -374,6 +374,145 @@ export const AppProvider = ({ children }) => {
     document.body.removeChild(link);
   };
 
+  // --- Push Notification 20h (Bilan Fin de Journée par Salon pour le Patron) ---
+  const [notifPermission, setNotifPermission] = useState(() => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return 'unsupported';
+    return Notification.permission;
+  });
+
+  const [notifEnabled, setNotifEnabled] = useState(() => {
+    const saved = localStorage.getItem('barber_20h_notif_enabled');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+
+  const [dailyRecapModal, setDailyRecapModal] = useState(null);
+
+  useEffect(() => {
+    localStorage.setItem('barber_20h_notif_enabled', JSON.stringify(notifEnabled));
+  }, [notifEnabled]);
+
+  const getDailySalonSummary = () => {
+    const salonBreakdown = salons.map(salon => {
+      const sStats = getStats('day', salon.id);
+      return {
+        id: salon.id,
+        name: salon.name,
+        revenue: sStats.totalRevenue,
+        count: sStats.count
+      };
+    });
+    const totalStats = getStats('day', 'all');
+    return {
+      salonBreakdown,
+      totalRevenue: totalStats.totalRevenue,
+      totalCount: totalStats.count
+    };
+  };
+
+  const requestNotificationPermission = async () => {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      setNotifPermission('unsupported');
+      return 'unsupported';
+    }
+    try {
+      const perm = await Notification.requestPermission();
+      setNotifPermission(perm);
+      if (perm === 'granted') {
+        setNotifEnabled(true);
+      }
+      return perm;
+    } catch (e) {
+      console.error('Notification permission error:', e);
+      return Notification.permission;
+    }
+  };
+
+  const sendDailyRecapNotification = async (isTest = false) => {
+    const summary = getDailySalonSummary();
+    const lines = summary.salonBreakdown.map(
+      s => `📍 ${s.name} : ${s.revenue.toFixed(2)}€ (${s.count} prest.)`
+    );
+    lines.push(`💰 Total : ${summary.totalRevenue.toFixed(2)}€ (${summary.totalCount} prest.)`);
+
+    const title = isTest
+      ? '🔔 Test Bilan 20h • BarBer Manager'
+      : '📊 Bilan 20h • Chiffre d\'Affaires du Jour';
+    const body = lines.join('\n');
+
+    // Show in-app summary modal for the Patron as well
+    setDailyRecapModal({
+      title,
+      isTest,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      ...summary
+    });
+
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      let perm = Notification.permission;
+      if (perm === 'default') {
+        perm = await requestNotificationPermission();
+      }
+      if (perm === 'granted') {
+        const notifOptions = {
+          body,
+          icon: '/barber-logo.png',
+          badge: '/barber-logo.png',
+          tag: isTest ? 'barber-daily-recap-test-' + Date.now() : 'barber-daily-recap-20h',
+          vibrate: [200, 100, 200],
+          requireInteraction: true
+        };
+        try {
+          if ('serviceWorker' in navigator) {
+            const reg = await navigator.serviceWorker.getRegistration();
+            if (reg && reg.showNotification) {
+              await reg.showNotification(title, notifOptions);
+              return true;
+            }
+          }
+          new Notification(title, notifOptions);
+          return true;
+        } catch (err) {
+          console.error('Push notification error:', err);
+        }
+      }
+    }
+    return false;
+  };
+
+  // Automatic 20:00 daily trigger for Patron
+  useEffect(() => {
+    if (!currentUser || currentUser.role !== 'patron' || loading || !notifEnabled || salons.length === 0) {
+      return;
+    }
+
+    const checkAndTrigger20h = () => {
+      const now = new Date();
+      const todayKey = now.toDateString();
+      const lastSentDate = localStorage.getItem('barber_last_20h_notif_date');
+
+      // Trigger at 20:00 (or if the patron opens the app after 20:00 and hasn't received today's 20h recap yet)
+      if (now.getHours() >= 20 && lastSentDate !== todayKey) {
+        localStorage.setItem('barber_last_20h_notif_date', todayKey);
+        sendDailyRecapNotification(false);
+      }
+    };
+
+    checkAndTrigger20h();
+    const intervalId = setInterval(checkAndTrigger20h, 20000);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        checkAndTrigger20h();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [currentUser, loading, notifEnabled, salons, transactions]);
+
   return (
     <AppContext.Provider value={{ 
       salons, users, services, transactions, 
@@ -382,7 +521,10 @@ export const AppProvider = ({ children }) => {
       addSalon, updateSalon, deleteSalon,
       addService, updateService, deleteService,
       updateServicePrice, addTransaction, cancelTransaction,
-      getStats, downloadCSV
+      getStats, downloadCSV,
+      notifPermission, notifEnabled, setNotifEnabled,
+      requestNotificationPermission, sendDailyRecapNotification,
+      dailyRecapModal, setDailyRecapModal
     }}>
       {children}
     </AppContext.Provider>
