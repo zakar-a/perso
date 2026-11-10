@@ -4,7 +4,7 @@ import LoginPage from './pages/LoginPage';
 import PatronDashboard from './pages/PatronDashboard';
 import CoiffeurDashboard from './pages/CoiffeurDashboard';
 import AdminSettings from './pages/AdminSettings';
-import { Users, LayoutDashboard, Scissors, LogOut, Settings } from 'lucide-react';
+import { Users, LayoutDashboard, Scissors, LogOut, Settings, X } from 'lucide-react';
 
 const AppContent = () => {
   const { currentUser, logout, loading, error } = useAppContext();
@@ -47,28 +47,33 @@ const AppContent = () => {
   return (
     <div className="container">
       {/* Header */}
-      <header className="flex-between" style={{ marginBottom: '2rem', marginTop: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <img src="/barber-logo.png" alt="BarberShop Manager" style={{ height: '40px' }} />
-          <div>
-            <h1 style={{ fontSize: '1.2rem', fontWeight: 700, letterSpacing: '1px' }}>
+      <header className="flex-between" style={{ marginBottom: '1.1rem', marginTop: '0.25rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+          <img src="/barber-logo.png" alt="BarberShop Manager" style={{ height: '38px', flexShrink: 0 }} />
+          <div style={{ minWidth: 0 }}>
+            <h1 style={{ fontSize: '1.1rem', fontWeight: 700, letterSpacing: '0.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {activeTab === 'dashboard' ? 'Tableau de Bord' : 
                activeTab === 'prestation' ? 'Espace Prestation' : 'Administration'}
             </h1>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {currentUser.name} • {currentUser.role === 'patron' ? 'Administrateur' : 'Coiffeur'}
             </p>
           </div>
         </div>
         <button 
+          type="button"
           onClick={logout}
           style={{ 
             background: 'var(--surface-color)', 
             border: '1px solid var(--surface-border)',
             color: 'var(--text-secondary)',
-            padding: '8px', 
+            padding: '10px', 
             borderRadius: '12px', 
-            cursor: 'pointer' 
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
           }}
           title="Déconnexion"
         >
@@ -86,32 +91,32 @@ const AppContent = () => {
       {/* Bottom Navigation */}
       <nav className="bottom-nav">
         {currentUser.role === 'patron' && (
-          <a 
-            href="#" 
+          <button 
+            type="button"
             className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} 
             onClick={() => setActiveTab('dashboard')}
           >
-            <LayoutDashboard size={24} />
+            <LayoutDashboard size={22} />
             <span>Synthèse</span>
-          </a>
+          </button>
         )}
-        <a 
-          href="#" 
+        <button 
+          type="button"
           className={`nav-item ${activeTab === 'prestation' ? 'active' : ''}`} 
           onClick={() => setActiveTab('prestation')}
         >
-          <Scissors size={24} />
+          <Scissors size={22} />
           <span>Ventes</span>
-        </a>
+        </button>
         {currentUser.role === 'patron' && (
-          <a 
-            href="#" 
+          <button 
+            type="button"
             className={`nav-item ${activeTab === 'admin' ? 'active' : ''}`} 
             onClick={() => setActiveTab('admin')}
           >
-            <Settings size={24} />
+            <Settings size={22} />
             <span>Équipe</span>
-          </a>
+          </button>
         )}
       </nav>
     </div>

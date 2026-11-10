@@ -70,8 +70,14 @@ export const AppProvider = ({ children }) => {
         }
         if (svData) setServices(svData);
         if (tData) setTransactions(tData.map(t => ({
-          ...t, coiffeurId: t.coiffeur_id, coiffeurName: t.coiffeur_name,
-          salonId: t.salon_id, serviceId: t.service_id, serviceName: t.service_name, paymentMethod: t.payment_method
+          ...t,
+          amount: Number(t.amount) || 0,
+          salonId: Number(t.salon_id),
+          coiffeurId: t.coiffeur_id,
+          coiffeurName: t.coiffeur_name,
+          serviceId: t.service_id,
+          serviceName: t.service_name,
+          paymentMethod: t.payment_method
         })));
         setLoading(false);
       } catch (err) { 
@@ -181,19 +187,32 @@ export const AppProvider = ({ children }) => {
     const user = users.find(u => u.id === coiffeurId);
     const service = services.find(s => s.id === serviceId);
     const prices = service?.prices || {};
-    const price = prices[salonId] || prices[Object.keys(prices)[0]] || 0;
+    const rawPrice = prices[salonId] ?? prices[String(salonId)] ?? prices[Object.keys(prices)[0]] ?? 0;
+    const price = parseFloat(rawPrice) || 0;
     
     const newTransaction = {
-      coiffeur_id: coiffeurId, coiffeur_name: user?.name, salon_id: parseInt(salonId),
-      service_id: serviceId, service_name: service?.name, payment_method: paymentMethod, amount: price
+      coiffeur_id: coiffeurId,
+      coiffeur_name: user?.name,
+      salon_id: parseInt(salonId, 10),
+      service_id: serviceId,
+      service_name: service?.name,
+      payment_method: paymentMethod,
+      amount: price
     };
 
     const { data, error } = await supabase.from('transactions').insert([newTransaction]).select();
-    if (!error && data) {
+    if (!error && data && data[0]) {
+      const row = data[0];
       const formatted = {
-        ...data[0], coiffeurId: data[0].coiffeur_id, coiffeurName: data[0].coiffeur_name,
-        salonId: data[0].salon_id, serviceId: data[0].service_id, serviceName: data[0].service_name,
-        paymentMethod: data[0].payment_method
+        ...row,
+        amount: Number(row.amount) || price,
+        timestamp: row.timestamp || new Date().toISOString(),
+        coiffeurId: row.coiffeur_id,
+        coiffeurName: row.coiffeur_name,
+        salonId: Number(row.salon_id),
+        serviceId: row.service_id,
+        serviceName: row.service_name,
+        paymentMethod: row.payment_method
       };
       setTransactions(prev => [formatted, ...prev]);
       return formatted;
@@ -202,24 +221,33 @@ export const AppProvider = ({ children }) => {
   };
 
   const cancelTransaction = async (transaction) => {
-    if (!transaction) return null;
+    if (!transaction || transaction.isCancelled) return null;
+    const rawAmount = Number(transaction.amount) || 0;
+    if (rawAmount <= 0) return null;
     
     const cancellation = {
-      coiffeur_id: transaction.coiffeurId,
-      coiffeur_name: transaction.coiffeurName,
-      salon_id: parseInt(transaction.salonId),
-      service_id: transaction.serviceId,
-      service_name: transaction.serviceName,
-      payment_method: transaction.paymentMethod,
-      amount: -transaction.amount
+      coiffeur_id: transaction.coiffeurId || transaction.coiffeur_id,
+      coiffeur_name: transaction.coiffeurName || transaction.coiffeur_name,
+      salon_id: parseInt(transaction.salonId ?? transaction.salon_id, 10),
+      service_id: transaction.serviceId || transaction.service_id,
+      service_name: transaction.serviceName || transaction.service_name,
+      payment_method: transaction.paymentMethod || transaction.payment_method,
+      amount: -Math.abs(rawAmount)
     };
 
     const { data, error } = await supabase.from('transactions').insert([cancellation]).select();
-    if (!error && data) {
+    if (!error && data && data[0]) {
+      const row = data[0];
       const formatted = {
-        ...data[0], coiffeurId: data[0].coiffeur_id, coiffeurName: data[0].coiffeur_name,
-        salonId: data[0].salon_id, serviceId: data[0].service_id, serviceName: data[0].service_name,
-        paymentMethod: data[0].payment_method
+        ...row,
+        amount: Number(row.amount) || -Math.abs(rawAmount),
+        timestamp: row.timestamp || new Date().toISOString(),
+        coiffeurId: row.coiffeur_id,
+        coiffeurName: row.coiffeur_name,
+        salonId: Number(row.salon_id),
+        serviceId: row.service_id,
+        serviceName: row.service_name,
+        paymentMethod: row.payment_method
       };
       setTransactions(prev => [formatted, ...prev]);
       return formatted;
@@ -233,49 +261,85 @@ export const AppProvider = ({ children }) => {
 
     // Filter by salon
     if (salonId && salonId !== 'all') {
-      filtered = filtered.filter(t => t.salonId === parseInt(salonId));
+      filtered = filtered.filter(t => Number(t.salonId) === parseInt(salonId, 10));
     } else if (currentUser && currentUser.role === 'coiffeur' && !salonId) {
       filtered = filtered.filter(t => t.coiffeurId === currentUser.id);
     }
 
     // Filter by time
     if (filter === 'day') {
-      filtered = filtered.filter(t => new Date(t.timestamp).toDateString() === now.toDateString());
+      filtered = filtered.filter(t => t.timestamp && new Date(t.timestamp).toDateString() === now.toDateString());
     } else if (filter === 'week') {
       const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      filtered = filtered.filter(t => new Date(t.timestamp) >= oneWeekAgo);
+      filtered = filtered.filter(t => t.timestamp && new Date(t.timestamp) >= oneWeekAgo);
     } else if (filter === 'month') {
-      filtered = filtered.filter(t => new Date(t.timestamp).getMonth() === now.getMonth() && new Date(t.timestamp).getFullYear() === now.getFullYear());
+      filtered = filtered.filter(t => {
+        if (!t.timestamp) return false;
+        const d = new Date(t.timestamp);
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      });
     } else if (filter === 'custom' && customRange) {
       const start = new Date(customRange.start);
       start.setHours(0, 0, 0, 0);
       const end = new Date(customRange.end);
       end.setHours(23, 59, 59, 999);
       filtered = filtered.filter(t => {
+        if (!t.timestamp) return false;
         const d = new Date(t.timestamp);
         return d >= start && d <= end;
       });
     }
 
-    const totalRevenue = filtered.reduce((sum, t) => sum + t.amount, 0);
-    const count = filtered.length;
+    // Pair negative cancellation rows with their original positive transaction to prevent double cancellation
+    const annotated = filtered.map(t => ({ ...t, amount: Number(t.amount) || 0, isCancelled: false }));
+    const cancellations = annotated.filter(t => t.amount < 0);
+    cancellations.forEach(cancelTx => {
+      const targetAmount = Math.abs(cancelTx.amount);
+      // Search from oldest to newest or among positive transactions not yet marked cancelled
+      for (let i = annotated.length - 1; i >= 0; i--) {
+        const cand = annotated[i];
+        if (
+          cand.amount > 0 &&
+          !cand.isCancelled &&
+          Math.abs(cand.amount - targetAmount) < 0.01 &&
+          (cand.serviceId === cancelTx.serviceId || cand.serviceName === cancelTx.serviceName) &&
+          cand.coiffeurId === cancelTx.coiffeurId &&
+          Number(cand.salonId) === Number(cancelTx.salonId) &&
+          cand.paymentMethod === cancelTx.paymentMethod
+        ) {
+          cand.isCancelled = true;
+          break;
+        }
+      }
+    });
+
+    const totalRevenue = parseFloat(
+      annotated.reduce((sum, t) => sum + t.amount, 0).toFixed(2)
+    );
+
+    const count = Math.max(
+      0,
+      annotated.reduce((acc, t) => acc + (t.amount > 0 ? 1 : t.amount < 0 ? -1 : 0), 0)
+    );
     
-    const byMethod = filtered.reduce((acc, t) => {
-      acc[t.paymentMethod] = (acc[t.paymentMethod] || 0) + t.amount;
+    const byMethod = annotated.reduce((acc, t) => {
+      const method = t.paymentMethod || 'Autre';
+      acc[method] = parseFloat(((acc[method] || 0) + t.amount).toFixed(2));
       return acc;
     }, {});
 
-    const byService = filtered.reduce((acc, t) => {
-      acc[t.serviceName] = (acc[t.serviceName] || 0) + t.amount;
+    const byService = annotated.reduce((acc, t) => {
+      const sName = t.serviceName || 'Prestation';
+      acc[sName] = parseFloat(((acc[sName] || 0) + t.amount).toFixed(2));
       return acc;
     }, {});
 
-    const byUser = filtered.reduce((acc, t) => {
-      acc[t.coiffeurId] = (acc[t.coiffeurId] || 0) + t.amount;
+    const byUser = annotated.reduce((acc, t) => {
+      acc[t.coiffeurId] = parseFloat(((acc[t.coiffeurId] || 0) + t.amount).toFixed(2));
       return acc;
     }, {});
 
-    return { totalRevenue, count, byMethod, byService, byUser, filtered };
+    return { totalRevenue, count, byMethod, byService, byUser, filtered: annotated };
   };
 
   const downloadCSV = (data) => {
